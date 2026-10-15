@@ -1,13 +1,14 @@
-# Evidence provenance
+# Screenshot Evidence — AWS EpicBook
 
-The images in this directory were extracted from the user's original DMI Cohort 2 Week 6 submission (27 February 2026). Browser/AWS account header areas were masked. Images represent historical lab proof and are not live deployment status.
+These images were extracted from the user's original **DMI Week 6 Assignment 2** report, pp. 11–33, not from the later PHP/WordPress and ALB/ASG exercises.
 
-- `01-vpc-and-subnets.jpg`: VPC and subnet configuration (Week 6, p.36)
-- `02-security-group-rules.jpg`: Application/network security group rules (p.42)
-- `03-rds-private-database.jpg`: RDS database configuration (p.43)
-- `04-hit-counter-working.jpg`: Live PHP hit-counter backed by RDS (p.49)
-- `05-load-balancer.jpg`: Application Load Balancer configuration (p.51)
-- `06-auto-scaling.jpg`: Auto Scaling Group configuration (p.52)
-- `07-target-health.jpg`: Target group / health inspection (p.57)
+| File | Original PDF page | Content |
+| --- | --- | --- |
+| `01-epicbook-vpc.jpg` | 12 | AWS VPC overview |
+| `02-public-route-table.jpg` | 13 | Public route table for EpicBook |
+| `03-ubuntu-ec2.jpg` | 15 | Ubuntu EC2 instance details |
+| `04-private-rds-mysql.jpg` | 20 | MySQL RDS configuration |
+| `05-vpc-subnets.jpg` | 12 | VPC subnet list |
+| `06-epicbook-running.jpg` | 33 | EpicBook homepage in browser |
 
-**Before publishing:** Inspect each screenshot for additional personally identifying or account-specific information.
+The AWS console account banner has been covered in extracted console images. The images are **historical lab evidence**, not current live-service verification. Review for remaining identifiable AWS details before public GitHub publication.

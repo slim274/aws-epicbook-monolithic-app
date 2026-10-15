@@ -1,11 +1,11 @@
-flowchart TB
-    Visitor[Browser / Internet] --> ALB
-    subgraph VPC[Custom AWS VPC - two Availability Zones]
-        ALB[Internet-facing Application Load Balancer] --> TG[ALB target group - health checks]
-        TG --> EC2A[EC2 app / web server - AZ A]
-        TG --> EC2B[EC2 app / web server - AZ B]
-        ASG[Auto Scaling Group - desired 2, min 2, max 4] -. manages .-> EC2A
-        ASG -. manages .-> EC2B
-        EC2A --> DB[(Private RDS database - Multi-AZ)]
-        EC2B --> DB
+flowchart LR
+    User["Browser / Internet"] -->|"HTTP 80"| Nginx
+    subgraph VPC["AWS epicbook-vpc 10.0.0.0/16"]
+        subgraph Public["Public subnet 10.0.1.0/24"]
+            Nginx["Ubuntu EC2 / Nginx reverse proxy"] -->|"localhost:8080"| App["EpicBook monolith / Express routes + views + API"]
+        end
+        subgraph Private["Private subnet 10.0.2.0/24"]
+            RDS["Amazon RDS MySQL / bookstore"]
+        end
+        App -->|"TCP 3306"| RDS
     end

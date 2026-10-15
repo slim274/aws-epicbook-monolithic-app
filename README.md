@@ -1,112 +1,77 @@
-# Highly Available Two-Tier AWS Application | ALB, Auto Scaling & RDS
+# EpicBook — Monolithic Application on AWS
 
-**AWS cloud infrastructure · VPC networking · High availability · Linux operations · Incident testing**
+**Two-tier AWS deployment · EC2 + Nginx + Node.js/Express + private RDS MySQL**  
+**DevOps Micro Internship (DMI), Cohort 2 · Week 6, Assignment 2**
 
-A documented **two-tier AWS lab** completed during **DevOps Micro Internship (DMI), Cohort 2 — Week 6** (submission: **27 February 2026**). I configured a multi-AZ network, load-balanced web/application instances, and a private Multi-AZ relational database. I tested a small PHP/MySQL hit-counter application and performed application availability checks.
+## Overview
 
-> **Scope:** This repository documents an instructor-led, hands-on AWS exercise (Week 6, Assignment 3). It is **not** a continuously running production service, a Terraform implementation, or evidence of end-to-end automated bootstrap across every instance. The later WordPress variation of this lab is documented separately in `aws-wordpress-alb-rds`.
+Deployed the **EpicBook** monolithic web application on an Ubuntu **Amazon EC2** instance and connected it to **Amazon RDS MySQL** in a private subnet. **Nginx** served as a reverse proxy to the Node.js/Express application. The app's routes, server-rendered views, and API run together as one deployable application; the database is a separate infrastructure tier.
 
-## What I worked on
-
-- Built an AWS VPC (`10.0.0.0/16`) with **two public and two private subnets** distributed across two Availability Zones.
-- Configured an Internet Gateway, NAT Gateway, public/private route tables, and security-group references between the ALB, EC2, and RDS tiers.
-- Provisioned a **non-public, Multi-AZ RDS database** within private subnets.
-- Created an Ubuntu 24.04 EC2 launch template (`t3.micro`) with user-data steps for Apache2, PHP and MySQL connectivity.
-- Validated a PHP hit counter that writes to its relational database.
-- Configured an **internet-facing Application Load Balancer**, HTTP target-group health checks, and an **Auto Scaling Group** with desired/min/max capacity **2/2/4**.
-- Checked load-balancer reachability, target health, and instance-replacement behavior; diagnosed issues with HTTP rules and unhealthy targets.
+> **Project scope:** This repository documents the EpicBook work on **pages 11–33** of my Week 6 report. It does **not** claim ALB, Auto Scaling, WordPress, PHP hit-counter, or Multi-AZ failover for EpicBook. Those activities belong to the separate high-availability assignment.
 
 ## Architecture
 
-This is a **logical design** from the submitted assignment, not a claim that every instance was proven to be in the same subnet throughout the lab. The report describes both public-subnet and private-subnet placement for ASG instances in different sections.
-
 ```mermaid
-flowchart TB
-    Visitor[Browser / Internet] --> ALB
-    subgraph VPC[Custom AWS VPC - two Availability Zones]
-        ALB[Internet-facing Application Load Balancer] --> TG[ALB target group - health checks]
-        TG --> EC2A[EC2 app / web server - AZ A]
-        TG --> EC2B[EC2 app / web server - AZ B]
-        ASG[Auto Scaling Group - desired 2, min 2, max 4] -. manages .-> EC2A
-        ASG -. manages .-> EC2B
-        EC2A --> DB[(Private RDS database - Multi-AZ)]
-        EC2B --> DB
+flowchart LR
+    User["Browser"] -->|"HTTP :80"| Nginx
+    subgraph VPC["AWS VPC: epicbook-vpc / 10.0.0.0/16"]
+        subgraph Pub["Public subnet: 10.0.1.0/24"]
+            Nginx["Ubuntu EC2 / Nginx"] -->|"localhost:8080"| App["EpicBook monolith / Node.js + Express"]
+        end
+        subgraph Priv["Private subnet: 10.0.2.0/24"]
+            RDS[("Private RDS MySQL / bookstore")]
+        end
+        App -->|"MySQL :3306"| RDS
     end
 ```
 
-**Tiers:** (1) PHP/Apache application tier behind an ALB; (2) private RDS database tier. The ALB is the entry point, rather than a separate application tier.
+[Editable architecture diagram](diagrams/architecture.mmd)
 
-## AWS components
+## Implementation
 
-| Component | Documented role |
+1. **Networking:** Built the `epicbook-vpc` (`10.0.0.0/16`), public/private subnets, Internet Gateway, route tables, and security groups. Restricted RDS MySQL port `3306` to the EC2 security group.
+2. **Compute:** Provisioned an Ubuntu EC2 VM and installed Git, Node.js, npm, Nginx, and MySQL client.
+3. **Application:** Cloned the supplied EpicBook repository, installed dependencies, configured MySQL access, and ran the Express server on **port 8080**.
+4. **Database:** Created non-public RDS MySQL, imported `author_seed.sql` before `books_seed.sql`, and verified the `bookstore` database and application connectivity.
+5. **Reverse proxy:** Configured Nginx to forward HTTP requests on **port 80** to Node.js on `localhost:8080`; EpicBook uses dynamic views rather than a standalone `public/index.html`.
+6. **Verification:** Loaded EpicBook in a browser and tested the `/api/cart` endpoint locally and through the Nginx proxy.
+
+## Troubleshooting
+
+| Challenge | Resolution |
 | --- | --- |
-| VPC / 4 subnets | Network segmentation across two AZs |
-| Internet Gateway / NAT | Public inbound routing and private outbound routing |
-| ALB `ha-web-alb` | HTTP entry point and target-group health checks |
-| EC2 + Apache2/PHP | Dynamic hit-counter application |
-| Auto Scaling Group `ha-web-asg` | Maintain desired capacity; configured at 2/2/4 |
-| RDS Multi-AZ | Non-public relational database for the application |
-| Security groups | HTTP from ALB to web tier; database port only from EC2 SG |
+| EC2 SSH/internet and DNS problems | Corrected subnet selection, public IP, routes, NACL/resolver configuration, and SSH-key permissions. |
+| SQL schema file was empty | Inspected seed scripts; imported authors before books. |
+| Nginx `403 Forbidden` | Switched from an incorrect static `index.html` configuration to the Node.js reverse proxy. |
+| Endpoint unavailable externally | Checked port 80 security-group rules and Nginx listener. |
+| API request used an incorrect route | Verified `/api/cart` through the correct proxy path. |
 
-## Implementation record
+See [deployment guide](docs/DEPLOYMENT.md) and [troubleshooting guide](docs/TROUBLESHOOTING.md).
 
-### 1. Network and database configuration
+## Screenshots — original Week 6 evidence
 
-I created the VPC/subnets, public and private routes, and separate security groups: `ha-alb-sg`, `ha-web-sg`, and `ha-db-sg`. The database subnet group used private subnets in separate AZs, and **public access was disabled**.
+These screenshots were extracted from **Assignment 2, pages 11–33** and document the original exercise. They are not current live AWS status.
 
-![VPC and subnet configuration](screenshots/01-vpc-and-subnets.jpg)
+| VPC setup | Public subnet routing |
+|:--:|:--:|
+| ![AWS EpicBook VPC](screenshots/01-epicbook-vpc.jpg) | ![Public route table](screenshots/02-public-route-table.jpg) |
 
-![Security group configuration](screenshots/02-security-group-rules.jpg)
+| EC2 instance | Private RDS MySQL |
+|:--:|:--:|
+| ![Ubuntu EC2](screenshots/03-ubuntu-ec2.jpg) | ![RDS settings](screenshots/04-private-rds-mysql.jpg) |
 
-![Private database configuration](screenshots/03-rds-private-database.jpg)
+| VPC subnet configuration | Application homepage |
+|:--:|:--:|
+| ![Public and private subnets](screenshots/05-vpc-subnets.jpg) | ![EpicBook live page](screenshots/06-epicbook-running.jpg) |
 
-### 2. Application configuration and validation
+[Full screenshot provenance](screenshots/EVIDENCE_SOURCES.md)
 
-The EC2 launch-template user data attempted to install Ubuntu Apache/PHP packages and deploy `index.php`. The lab's hit counter used MySQL connectivity and returned a browser-visible view count. **Some first-boot setup required manual correction**, including replacing an Amazon Linux `httpd` command with Ubuntu `apache2` and removing the Apache default `index.html`.
+## Repository content and attribution
 
-Checks I used during the exercise included:
+The original EpicBook application has `server.js`, `routes/`, `views/`, `models/`, `public/` and `db/`. My work focused on AWS setup, application deployment, reverse-proxy configuration, database integration, and troubleshooting.
 
-```bash
-sudo systemctl status apache2
-curl http://localhost
-sudo ss -tulpn
-sudo tail -n 50 /var/log/apache2/error.log
-sudo tail -n 50 /var/log/cloud-init-output.log
-```
+**Original application:** [pravinmishraaws/theepicbook](https://github.com/pravinmishraaws/theepicbook). The source application was supplied for training; this portfolio documents my deployment work rather than claiming original application authorship.
 
-![PHP hit counter connected to RDS](screenshots/04-hit-counter-working.jpg)
+**Security:** Do not commit `.env`, real `config/config.json` credentials, SSH private keys, database passwords, or unreviewed screenshots. See [security notes](docs/SECURITY.md).
 
-### 3. Load balancing and scaling
-
-I created the public ALB, registered targets on **HTTP port 80**, tested the `/` health-check path, and attached an Auto Scaling Group. I corrected target-health problems by allowing HTTP traffic **from the ALB security group to the EC2 security group**, rather than opening the backend indiscriminately.
-
-![ALB configuration](screenshots/05-load-balancer.jpg)
-
-![Auto Scaling Group](screenshots/06-auto-scaling.jpg)
-
-### 4. Availability testing and troubleshooting
-
-The assignment documents checking ALB availability while detaching an instance with **replacement enabled**, and observing the target group's draining/health behavior. This is a **controlled instance-replacement exercise**, not proof that an entire Availability Zone physically failed.
-
-![Target group health inspection](screenshots/07-target-health.jpg)
-
-The detailed troubleshooting notes are in [docs/operations-and-recovery.md](docs/operations-and-recovery.md).
-
-## Results and limitations
-
-- Verified the PHP hit-counter page could be reached and interact with an RDS database.
-- Configured the ALB and ASG across two AZs, and performed manual availability checks.
-- Resolved errors involving package names, default Apache content, first-boot configuration, ports and unhealthy targets.
-- **Limitations:** The report describes manual bootstrap fixes and does not consistently identify ASG instance subnet placement; it does not establish automated recovery across every failure scenario, HTTPS, or production hardening.
-
-**Evidence:** Screenshots were selected from the submitted Week 6 report (pages 36–57). Browser URLs and AWS resource states are historical. Browser/account banners were obscured in the exported screenshots; review all files again before publishing.
-
-## Skills demonstrated
-
-`AWS EC2` · `VPC` · `Subnets` · `Security Groups` · `NAT Gateway` · `ALB` · `Auto Scaling` · `RDS Multi-AZ` · `Apache` · `PHP` · `Linux` · `Cloud Troubleshooting` · `Availability Testing`
-
-## Author
-
-**Ibrahim Ahmed Abiodun**  
-GitHub: [@slim274](https://github.com/slim274)  
-**Training:** DevOps Micro Internship — Cohort 2, Week 6, Assignment 3
+**GitHub repository:** [slim274/aws-epicbook-monolithic-app](https://github.com/slim274/aws-epicbook-monolithic-app) (URL becomes valid after renaming the existing repository).

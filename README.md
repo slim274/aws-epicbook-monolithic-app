@@ -36,6 +36,17 @@ flowchart LR
 5. **Reverse proxy:** Configured Nginx to forward HTTP requests on **port 80** to Node.js on `localhost:8080`; EpicBook uses dynamic views rather than a standalone `public/index.html`.
 6. **Verification:** Loaded EpicBook in a browser and tested the `/api/cart` endpoint locally and through the Nginx proxy.
 
+## Skills Demonstrated
+
+- **AWS cloud infrastructure:** Provisioned and configured Amazon EC2, VPC, public/private subnets, route tables, and an Internet Gateway.
+- **Cloud networking and security:** Configured security groups, SSH access, and private Amazon RDS connectivity using least-privilege access rules.
+- **Linux system administration:** Installed and managed software on Ubuntu; diagnosed SSH, DNS, network, and service issues.
+- **Web application deployment:** Deployed a monolithic **Node.js/Express** application and installed dependencies with npm.
+- **Nginx reverse proxy:** Routed incoming HTTP traffic on port **80** to the application on **port 8080** and resolved configuration errors.
+- **Database administration:** Configured **Amazon RDS MySQL**, imported SQL seed data, checked tables, and verified EC2-to-RDS communication.
+- **Troubleshooting and validation:** Used Linux commands, MySQL client checks, `curl`, and browser tests to verify the app and `/api/cart` endpoint.
+- **Git and GitHub:** Cloned the training repository and documented deployment steps and evidence for reproducibility.
+
 ## Troubleshooting
 
 | Challenge | Resolution |
